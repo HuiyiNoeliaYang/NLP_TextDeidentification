@@ -6,14 +6,25 @@ import numpy as np
 import os
 import re
 import random
-
-from nltk.corpus import stopwords
 import torch
 import transformers
-
 from utils import words_from_text, word_start_and_end_idxs_from_text
+import nltk
 
-eng_stopwords = set(stopwords.words('english'))
+
+os.environ.setdefault("NLTK_DATA", "/teamspace/studios/this_studio/NLP_TextDeidentification")
+try: 
+    from nltk.corpus import stopwords
+    eng_stopwords = set(stopwords.words('english'))
+except LookupError:
+    nltk.download("stopwords", download_dir=os.environ["NLTK_DATA"])
+    from nltk.corpus import stopwords
+    eng_stopwords = set(stopwords.words("english"))
+
+
+
+
+
 
 @functools.cache
 def _cached_words_from_text(s: str) -> List[str]:

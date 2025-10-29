@@ -1,4 +1,4 @@
-from datamodule import WikipediaDataModule
+from datamodule import DataModule
 import os
 from model import CoordinateAscentModel
 
@@ -15,7 +15,7 @@ checkpoint_path = "wikibio_roberta_roberta/model.ckpt"
 
 model = CoordinateAscentModel.load_from_checkpoint(checkpoint_path)
 
-dm = WikipediaDataModule(
+dm = DataModule(
 
 document_model_name_or_path=model.document_model_name_or_path,
 
