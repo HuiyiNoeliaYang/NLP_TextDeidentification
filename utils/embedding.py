@@ -9,8 +9,12 @@ from tqdm import tqdm
 from model_cfg import model_paths_dict
 
 
-# num_cpus = len(os.sched_getaffinity(0))
-num_cpus =1
+try:
+    # Linux: respects CPU affinity masks
+    num_cpus = len(os.sched_getaffinity(0))
+except AttributeError:
+    # macOS/Windows: use total logical CPUs
+    num_cpus = os.cpu_count() or 1
 
 def get_profile_embeddings_dir_by_model_key(model_key: str) -> str:
     current_folder = os.path.dirname(os.path.abspath(__file__))
@@ -74,12 +78,12 @@ def precompute_profile_embeddings(
 
 
 def precompute_profile_embeddings_for_model_key(model_key: str):
-    from datamodule import DataModule
+    from datamodule import WikipediaDataModule
     from model import CoordinateAscentModel
 
     checkpoint_path = model_paths_dict[model_key]
     model = CoordinateAscentModel.load_from_checkpoint(checkpoint_path)
-    dm = DataModule(
+    dm = WikipediaDataModule(
         document_model_name_or_path=model.document_model_name_or_path,
         profile_model_name_or_path=model.profile_model_name_or_path,
         dataset_name='wiki_bio',

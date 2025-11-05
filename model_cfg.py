@@ -36,7 +36,8 @@ model_paths_dict["model_7"] = '/home/jxm3/research/deidentification/unsupervised
 # model_8 is roberta-tapas-idf with uniform sampling and linear lr decay 
 #       and label smoothing {0.1, 0.01, 0.05}.
 #       wandb.ai/jack-morris/deid-wikibio-3/runs/{1jjn2o39,3u0271pj,3f738g9c}
-model_paths_dict["model_8_ls0.01"] = '/home/jxm3/research/deidentification/unsupervised-deidentification/saves/ca__roberta__tapas__idf__dropout_-1.0_1.0_0.0__e3072__ls0.01/deid-wikibio-3_default/3u0271pj_704/checkpoints/epoch=69-step=159389-adv100_acc.ckpt'
+# Updated to use downloaded HuggingFace checkpoint
+model_paths_dict["model_8_ls0.01"] = './wikibio_roberta_roberta_idf/model.ckpt'
 model_paths_dict["model_8_ls0.05"] = '/home/jxm3/research/deidentification/unsupervised-deidentification/saves/ca__roberta__tapas__idf__dropout_-1.0_1.0_0.0__e3072__ls0.05/deid-wikibio-3_default/3f738g9c_700/checkpoints/epoch=66-step=152558-adv100_acc.ckpt'
 model_paths_dict["model_8_ls0.1"] = '/home/jxm3/research/deidentification/unsupervised-deidentification/saves/ca__roberta__tapas__idf__dropout_-1.0_1.0_0.0__e3072__ls0.1/deid-wikibio-3_default/1jjn2o39_703/checkpoints/epoch=67-step=154835-adv100_acc.ckpt'
 

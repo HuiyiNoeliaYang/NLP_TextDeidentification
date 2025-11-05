@@ -1,11 +1,16 @@
-from datamodule import DataModule
+from datamodule import WikipediaDataModule
 import os
 from model import CoordinateAscentModel
 
   
   
 
-num_cpus = len(os.sched_getaffinity(0))
+try:
+    # Linux: respects CPU affinity masks
+    num_cpus = len(os.sched_getaffinity(0))
+except AttributeError:
+    # macOS/Windows: use total logical CPUs
+    num_cpus = os.cpu_count() or 1
 
   
 # chenage it later 
@@ -15,7 +20,7 @@ checkpoint_path = "wikibio_roberta_roberta/model.ckpt"
 
 model = CoordinateAscentModel.load_from_checkpoint(checkpoint_path)
 
-dm = DataModule(
+dm = WikipediaDataModule(
 
 document_model_name_or_path=model.document_model_name_or_path,
 

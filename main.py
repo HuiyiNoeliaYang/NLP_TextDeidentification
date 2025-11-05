@@ -13,7 +13,7 @@ from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor, ModelCheckpoint
 from transformers import AutoTokenizer
 
-from datamodule import DataModule
+from datamodule import WikipediaDataModule
 from utils import model_cls_dict
 
 USE_WANDB = True
@@ -253,7 +253,7 @@ def main(args: argparse.Namespace):
         if model.path_to_save_checkpoints == "":
             model.path_to_save_checkpoints = os.path.abspath(ckpt_save_path)
 
-    dm = DataModule(
+    dm = WikipediaDataModule(
         debug_mode = args.debug_mode if args.debug_mode else False,
         local_data_path=args.local_data_path,
         dataset_source=args.dataset_source,

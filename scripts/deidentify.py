@@ -1,5 +1,7 @@
 import sys
-sys.path.append('/home/jxm3/research/deidentification/unsupervised-deidentification')
+import os
+# Add parent directory to path so we can import modules
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -18,6 +20,7 @@ import argparse
 import json
 import os
 
+import torch
 import textattack
 
 from textattack import Attack, Attacker, AttackArgs
@@ -26,7 +29,12 @@ from textattack.constraints.pre_transformation import (
 )
 
 
-num_cpus = len(os.sched_getaffinity(0))
+try:
+    # Linux: respects CPU affinity masks
+    num_cpus = len(os.sched_getaffinity(0))
+except AttributeError:
+    # macOS/Windows: use total logical CPUs
+    num_cpus = os.cpu_count() or 1
 
 
 def main(
@@ -85,14 +93,32 @@ def main(
     is_cross_encoder = ('cross_encoder' in model_key)
 
     if is_cross_encoder:
-        model = ContrastiveCrossAttentionModel.load_from_checkpoint(
-            checkpoint_path
-        )
+        try:
+            model = ContrastiveCrossAttentionModel.load_from_checkpoint(
+                checkpoint_path, strict=True
+            )
+        except RuntimeError as e:
+            if "Unexpected key" in str(e) or "Missing key" in str(e):
+                print(f"Warning: Loading checkpoint with strict=False due to key mismatch: {e}")
+                model = ContrastiveCrossAttentionModel.load_from_checkpoint(
+                    checkpoint_path, strict=False
+                )
+            else:
+                raise
         profile_model_name_or_path = model.document_model_name_or_path
     else:
-        model = CoordinateAscentModel.load_from_checkpoint(
-            checkpoint_path
-        )
+        try:
+            model = CoordinateAscentModel.load_from_checkpoint(
+                checkpoint_path, strict=True
+            )
+        except RuntimeError as e:
+            if "Unexpected key" in str(e) or "Missing key" in str(e):
+                print(f"Warning: Loading checkpoint with strict=False due to key mismatch: {e}")
+                model = CoordinateAscentModel.load_from_checkpoint(
+                    checkpoint_path, strict=False
+                )
+            else:
+                raise
         profile_model_name_or_path = model.profile_model_name_or_path
     
     print(f"loading data with {num_cpus} CPUs")
@@ -128,7 +154,10 @@ def main(
             profile_embeddings=all_profile_embeddings,
             fake_response=no_model
         )
-    model_wrapper.to('cuda')
+    # Use CPU if CUDA is not available (for Mac compatibility)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model_wrapper.to(device)
+    print(f"Using device: {device}")
 
     constraints = [
         # Prevents us from trying to replace the same word multiple times.

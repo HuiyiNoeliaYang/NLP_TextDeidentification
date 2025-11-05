@@ -33,7 +33,7 @@ from utils import create_document_and_profile, dict_union, tokenize_profile, wik
 datasets.utils.logging.set_verbosity_error()
 
 
-class DataModule(LightningDataModule):
+class WikipediaDataModule(LightningDataModule):
     dataset_name: str
     dataset_version: str
 
@@ -154,16 +154,55 @@ class DataModule(LightningDataModule):
         val_percent = float(self.dataset_val_split.split(":")[-1].split("%")[0])
         test_percent = 100 - train_percent - val_percent
         self.dataset = datasets.Dataset.from_parquet(self.local_data_path, keep_in_memory=True).train_test_split(train_size=float(train_percent / 100)) if self.dataset_source == "parquet" else None
-        self.train_dataset = self.dataset['train'] if self.dataset_source == "parquet" else datasets.load_dataset(self.dataset_name, split=self.dataset_train_split, version=self.dataset_version)
+        if self.dataset_source == "parquet":
+            self.train_dataset = self.dataset['train']
+        else:
+            try:
+                # Try loading with version parameter (older datasets versions)
+                self.train_dataset = datasets.load_dataset(self.dataset_name, split=self.dataset_train_split, version=self.dataset_version)
+            except (TypeError, RuntimeError) as e:
+                if "version" in str(e) or "no longer supported" in str(e) or "Dataset scripts" in str(e):
+                    # Newer datasets versions don't support version parameter or require trust_remote_code
+                    try:
+                        self.train_dataset = datasets.load_dataset(self.dataset_name, split=self.dataset_train_split, trust_remote_code=True)
+                    except Exception as e2:
+                        # Last resort: try without trust_remote_code
+                        self.train_dataset = datasets.load_dataset(self.dataset_name, split=self.dataset_train_split)
+                else:
+                    raise
         print(f"train_dataset size: {len(self.train_dataset)}")
          # wiki_bio val size: 72,831
         #print(f"loading {self.dataset_name}[{self.dataset_version}] split {self.dataset_val_split}")
         self.val_test_dataset = self.dataset['test'].train_test_split(test_size=float(test_percent / (test_percent + val_percent))) if self.dataset_source == "parquet" else None
-        self.val_dataset = self.val_test_dataset['train'] if self.dataset_source == "parquet" else datasets.load_dataset(self.dataset_name, split=self.dataset_val_split, version=self.dataset_version)
+        if self.dataset_source == "parquet":
+            self.val_dataset = self.val_test_dataset['train']
+        else:
+            try:
+                self.val_dataset = datasets.load_dataset(self.dataset_name, split=self.dataset_val_split, version=self.dataset_version)
+            except (TypeError, RuntimeError) as e:
+                if "version" in str(e) or "no longer supported" in str(e) or "Dataset scripts" in str(e):
+                    try:
+                        self.val_dataset = datasets.load_dataset(self.dataset_name, split=self.dataset_val_split, trust_remote_code=True)
+                    except Exception as e2:
+                        self.val_dataset = datasets.load_dataset(self.dataset_name, split=self.dataset_val_split)
+                else:
+                    raise
         print(f"val_dataset size: {len(self.val_dataset)}")
         # wiki_bio test size: 72,831
         #print(f"loading {self.dataset_name} split {self.dataset_test_split}")
-        self.test_dataset = self.val_test_dataset['test'] if self.dataset_source == "parquet" else datasets.load_dataset(self.dataset_name, split=self.dataset_test_split, version=self.dataset_version)
+        if self.dataset_source == "parquet":
+            self.test_dataset = self.val_test_dataset['test']
+        else:
+            try:
+                self.test_dataset = datasets.load_dataset(self.dataset_name, split=self.dataset_test_split, version=self.dataset_version)
+            except (TypeError, RuntimeError) as e:
+                if "version" in str(e) or "no longer supported" in str(e) or "Dataset scripts" in str(e):
+                    try:
+                        self.test_dataset = datasets.load_dataset(self.dataset_name, split=self.dataset_test_split, trust_remote_code=True)
+                    except Exception as e2:
+                        self.test_dataset = datasets.load_dataset(self.dataset_name, split=self.dataset_test_split)
+                else:
+                    raise
         print(f"test_dataset size: {len(self.test_dataset)}")
              
         if self.dataset_source == 'parquet':

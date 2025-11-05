@@ -10,7 +10,7 @@ import pandas as pd
 import torch
 import tqdm
 
-from datamodule import DataModule
+from datamodule import WikipediaDataModule
 from model import CoordinateAscentModel
 from model_cfg import model_paths_dict
 from utils import get_profile_embeddings
@@ -129,7 +129,7 @@ def get_predictions_from_model(model_key: str, data: List[str], max_seq_length: 
     model = CoordinateAscentModel.load_from_checkpoint(
         checkpoint_path
     )
-    dm = DataModule(
+    dm = WikipediaDataModule(
         document_model_name_or_path=model.document_model_name_or_path,
         profile_model_name_or_path=model.profile_model_name_or_path,
         dataset_name='wiki_bio',
