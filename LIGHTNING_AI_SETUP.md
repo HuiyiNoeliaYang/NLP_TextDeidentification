@@ -9,10 +9,13 @@ This document provides a step-by-step guide to run the deidentification script o
 - [ ] Ensure all files are in the correct directory structure
 
 ### 2. Model Checkpoint
-- [ ] Verify the model checkpoint exists:
-  - Path: `./wikibio_roberta_roberta_idf/model.ckpt`
-  - OR update `model_cfg.py` line 40 if using a different path
-- [ ] If using HuggingFace checkpoint, ensure it's downloaded/cloned in the project root
+- [ ] Download the model from HuggingFace:
+  ```bash
+  git clone https://huggingface.co/jxm/wikibio_roberta_roberta_idf
+  ```
+  This will create the `wikibio_roberta_roberta_idf/` folder in your project root with the `model.ckpt` file inside.
+- [ ] Verify the checkpoint exists at: `./wikibio_roberta_roberta_idf/model.ckpt`
+- [ ] OR update `model_cfg.py` line 40 if using a different path
 
 ### 3. Install Dependencies
 ```bash
