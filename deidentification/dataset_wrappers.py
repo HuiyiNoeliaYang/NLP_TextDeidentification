@@ -42,7 +42,22 @@ class WikiDatasetWrapper(textattack.datasets.Dataset):
             i += 1
         self.dataset = dataset
         # Extract names only from the test dataset (the profiles being attacked)
-        self.label_names = np.array(list(dm.test_dataset['name']))
+        # Fallback: extract from profile_keys/profile_values if 'name' column doesn't exist
+        if 'name' in dm.test_dataset.column_names:
+            self.label_names = np.array(list(dm.test_dataset['name']))
+        else:
+            # Extract name from profile_keys/profile_values as fallback
+            def extract_name(ex):
+                k_list = ex['profile_keys'].split("||")
+                v_list = ex['profile_values'].split("||")
+                if 'name' in k_list:
+                    name = v_list[k_list.index('name')].strip()
+                elif 'article_title' in k_list:
+                    name = v_list[k_list.index('article_title')].strip()
+                else:
+                    name = v_list[0].strip() if v_list else ""
+                return ' '.join((word.capitalize() for word in name.split()))
+            self.label_names = np.array([extract_name(ex) for ex in dm.test_dataset])
         self.adv_dataset = adv_dataset
     
     def __len__(self) -> int:
