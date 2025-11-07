@@ -98,6 +98,27 @@ This is an example of how to train the RoBERTa-TAPAS example from above (uniform
 python main.py --epochs 60 --batch_size 128 --max_seq_length 128 --word_dropout_ratio 1.0 --word_dropout_perc -1.0 --document_model_name roberta --profile_model_name tapas --dataset_train_split="train[:100%]" --learning_rate 1e-4 --num_validations_per_epoch 1 --loss coordinate_ascent --e 3072 --label_smoothing 0.01
 ```
 
+### example deidentification command
+
+To generate masked documents using a pre-trained model:
+
+```bash
+# Fast testing with 1% of training data (recommended for quick testing)
+python scripts/deidentify.py --model_key model_8_ls0.01 --n 1 --k 1 --train_split "train[:1%]"
+
+# Production run with full training data
+python scripts/deidentify.py --model_key model_8_ls0.01 --n 10 --k 1 --train_split "train[:100%]"
+```
+
+**Key parameters:**
+- `--model_key`: Model identifier (see `model_cfg.py` for available models)
+- `--n`: Number of documents to deidentify
+- `--k`: Top-K classes for adversarial goal function
+- `--train_split`: Training dataset split to use (e.g., `train[:1%]` for fast testing, `train[:100%]` for production)
+  - **Tip:** Use smaller splits (`train[:1%]` or `train[:10%]`) for faster testing. The full dataset takes ~1.5-2 hours to tokenize.
+
+**Output:** Masked documents are saved in `adv_csvs_full_8/{model_key}/` directory.
+
 ## analysis example
 
 ## Troubleshooting

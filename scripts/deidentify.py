@@ -57,6 +57,7 @@ def main(
         min_idf_weighting: Optional[float] = None,
         do_reid: bool = False,
         no_model: bool = False,
+        train_split: str = 'train[:100%]',
     ):
     """Deidentifies data with these experimental parameters.
 
@@ -122,11 +123,12 @@ def main(
         profile_model_name_or_path = model.profile_model_name_or_path
     
     print(f"loading data with {num_cpus} CPUs")
+    print(f"Using training split: {train_split} (use --train_split to change)")
     dm = WikipediaDataModule(
         document_model_name_or_path=model.document_model_name_or_path,
         profile_model_name_or_path=profile_model_name_or_path,
         dataset_name='wiki_bio',
-        dataset_train_split='train[:100%]',
+        dataset_train_split=train_split,
         dataset_val_split='val[:100%]',
         dataset_test_split='test[:100%]',
         dataset_version='1.2.0',
@@ -294,6 +296,9 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--do_reid', default=False, action='store_true',
         help=('whether to use a reidentification model')
     )
+    parser.add_argument('--train_split', type=str, default='train[:100%]',
+        help=('Training dataset split to use (e.g., train[:1%%] for 1%%, train[:10%%] for 10%%, train[:100%%] for full). Use smaller splits for faster testing.')
+    )
 
     args = parser.parse_args()
 
@@ -322,5 +327,6 @@ if __name__ == '__main__':
         table_score=args.table_score,
         max_idf_goal=args.max_idf_goal,
         do_reid=args.do_reid,
+        train_split=args.train_split,
     )
     print(args)
