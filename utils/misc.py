@@ -97,7 +97,7 @@ def create_document_and_profile(ex: Dict[str, str], dataset_source="huggingface"
     # return example: transformed table + first paragraph
     # breakpoint()
     return {
-#        'name': name_from_table_rows(table_rows),
+        'name': name_from_table_rows(table_rows),  # Extract name from profile for easy access
         'document': fixed_target_text,                          # First paragraph of biography
         'profile': table_text,                                  # Table re-printed as a string
         # 'profile_without_name': table_text_without_name,      # Table with name removed

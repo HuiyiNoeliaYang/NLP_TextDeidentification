@@ -41,7 +41,8 @@ class WikiDatasetWrapper(textattack.datasets.Dataset):
             dataset.append(dm.test_dataset[i])
             i += 1
         self.dataset = dataset
-        self.label_names = np.array(list(dm.test_dataset['name']) + list(dm.val_dataset['name']) + list(dm.train_dataset['name']))
+        # Extract names only from the test dataset (the profiles being attacked)
+        self.label_names = np.array(list(dm.test_dataset['name']))
         self.adv_dataset = adv_dataset
     
     def __len__(self) -> int:
