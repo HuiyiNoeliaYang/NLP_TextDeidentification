@@ -140,12 +140,40 @@ class ChangeClassificationToBelowTopKClasses(textattack.goal_functions.Classific
         table_score = 0.0
         idf_score = 0.0
 
-        for word in attacked_text.newly_swapped_words:
+        # Safely get newly swapped words - handle case where prev_attacked_text doesn't exist
+        # This can happen with BeamSearch when first-generation transformations are created
+        if 'prev_attacked_text' in attacked_text.attack_attrs:
+            # Standard case: prev_attacked_text exists, use newly_swapped_words
+            try:
+                newly_swapped_words = attacked_text.newly_swapped_words
+            except (KeyError, AttributeError) as e:
+                # Fallback if newly_swapped_words property fails
+                prev_text = attacked_text.attack_attrs['prev_attacked_text']
+                newly_swapped_words = [
+                    attacked_text.words[i] 
+                    for i in newly_modified_indices 
+                    if i < len(attacked_text.words) and 
+                       (i >= len(prev_text.words) or attacked_text.words[i] != prev_text.words[i])
+                ]
+        else:
+            # Fallback case: prev_attacked_text doesn't exist (first generation in BeamSearch)
+            # Use words at modified indices as approximation of swapped words
+            newly_swapped_words = [
+                attacked_text.words[i] 
+                for i in newly_modified_indices 
+                if i < len(attacked_text.words)
+            ]
+        
+        if len(newly_swapped_words) == 0:
+            # No swapped words to score, return basic score
+            return 0.0 - model_outputs[self.ground_truth_output]
+
+        for word in newly_swapped_words:
             if (self.table_score != 0) and self._word_in_table(word):
                 table_score += self.table_score # Intuition is we want use the table to break ties of about this much % probability.
             idf_score += self.get_word_idf_prob(word)
-        idf_score /= len(attacked_text.newly_swapped_words)
-        table_score /= len(attacked_text.newly_swapped_words)
+        idf_score /= len(newly_swapped_words)
+        table_score /= len(newly_swapped_words)
 
         softmax_denominator = model_outputs.exp().sum()
         # This is a numerically-stable softmax that incorporates the table score in probability space.
