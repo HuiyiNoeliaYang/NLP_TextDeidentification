@@ -150,7 +150,7 @@ def main(
             fake_response=no_model
         )
     else:
-        all_profile_embeddings = get_profile_embeddings(model_key=model_key, use_train_profiles=use_train_profiles)
+        all_profile_embeddings = get_profile_embeddings(model_key=model_key, use_train_profiles=use_train_profiles, dm=dm)
         model_wrapper = MainModelWrapper(
             model=model,
             document_tokenizer=dm.document_tokenizer,

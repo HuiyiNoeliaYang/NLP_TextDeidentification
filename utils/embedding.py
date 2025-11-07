@@ -24,8 +24,8 @@ def get_profile_embeddings_dir_by_model_key(model_key: str) -> str:
     )
 
 
-def get_profile_embeddings(model_key: str, use_train_profiles: bool) -> torch.Tensor:
-    profile_embeddings = get_profile_embeddings_by_model_key(model_key=model_key)
+def get_profile_embeddings(model_key: str, use_train_profiles: bool, dm: Any = None) -> torch.Tensor:
+    profile_embeddings = get_profile_embeddings_by_model_key(model_key=model_key, dm=dm)
 
     print("concatenating train, val, and test profile embeddings")
     if use_train_profiles:
@@ -77,7 +77,7 @@ def precompute_profile_embeddings(
     )
 
 
-def precompute_profile_embeddings_for_model_key(model_key: str):
+def precompute_profile_embeddings_for_model_key(model_key: str, dm: Any = None):
     from datamodule import WikipediaDataModule
     from model import CoordinateAscentModel
 
@@ -90,21 +90,27 @@ def precompute_profile_embeddings_for_model_key(model_key: str):
             model = CoordinateAscentModel.load_from_checkpoint(checkpoint_path, strict=False)
         else:
             raise
-    dm = WikipediaDataModule(
-        document_model_name_or_path=model.document_model_name_or_path,
-        profile_model_name_or_path=model.profile_model_name_or_path,
-        dataset_name='wiki_bio',
-        dataset_train_split='train[:100%]',
-        dataset_val_split='val[:100%]',
-        dataset_test_split='test[:100%]',
-        dataset_version='1.2.0',
-        num_workers=num_cpus,
-        train_batch_size=64,
-        eval_batch_size=64,
-        max_seq_length=128,
-        sample_spans=False,
-    )
-    dm.setup("fit")
+    
+    # Use provided datamodule if available, otherwise create new one with full splits
+    if dm is None:
+        print("Note: Creating new datamodule with full splits for embedding computation. Consider using existing datamodule for faster processing.")
+        dm = WikipediaDataModule(
+            document_model_name_or_path=model.document_model_name_or_path,
+            profile_model_name_or_path=model.profile_model_name_or_path,
+            dataset_name='wiki_bio',
+            dataset_train_split='train[:100%]',
+            dataset_val_split='val[:100%]',
+            dataset_test_split='test[:100%]',
+            dataset_version='1.2.0',
+            num_workers=num_cpus,
+            train_batch_size=64,
+            eval_batch_size=64,
+            max_seq_length=128,
+            sample_spans=False,
+        )
+        dm.setup("fit")
+    else:
+        print("Using existing datamodule for embedding computation (respects your split settings).")
 
     model_embeddings_path = get_profile_embeddings_dir_by_model_key(
         model_key=model_key
@@ -134,12 +140,12 @@ def precompute_profile_embeddings_for_model_key(model_key: str):
     }
 
 
-def get_profile_embeddings_by_model_key(model_key: str):
+def get_profile_embeddings_by_model_key(model_key: str, dm: Any = None):
     model_embeddings_path = get_profile_embeddings_dir_by_model_key(
         model_key=model_key
     )
     if (not os.path.exists(model_embeddings_path)) or (not os.path.exists(os.path.join(model_embeddings_path, 'test.pkl'))):
-        return precompute_profile_embeddings_for_model_key(model_key=model_key)
+        return precompute_profile_embeddings_for_model_key(model_key=model_key, dm=dm)
 
     else:
         train_embeddings_path = os.path.join(model_embeddings_path, 'train.pkl')
