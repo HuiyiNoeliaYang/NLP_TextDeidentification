@@ -41,23 +41,51 @@ class WikiDatasetWrapper(textattack.datasets.Dataset):
             dataset.append(dm.test_dataset[i])
             i += 1
         self.dataset = dataset
-        # Extract names only from the test dataset (the profiles being attacked)
-        # Fallback: extract from profile_keys/profile_values if 'name' column doesn't exist
-        if 'name' in dm.test_dataset.column_names:
-            self.label_names = np.array(list(dm.test_dataset['name']))
+        # Extract names to match the model's output space
+        # The model outputs over ALL profiles in profile_embeddings (test+val+train if use_train_profiles)
+        # So label_names must match: test + val (+ train if use_train_profiles)
+        
+        def extract_name_from_ex(ex):
+            """Helper to extract name from an example."""
+            if 'name' in ex:
+                return ex['name']
+            # Fallback: extract from profile_keys/profile_values
+            k_list = ex['profile_keys'].split("||")
+            v_list = ex['profile_values'].split("||")
+            if 'name' in k_list:
+                name = v_list[k_list.index('name')].strip()
+            elif 'article_title' in k_list:
+                name = v_list[k_list.index('article_title')].strip()
+            else:
+                name = v_list[0].strip() if v_list else ""
+            return ' '.join((word.capitalize() for word in name.split()))
+        
+        # Get the number of profiles the model can predict (from profile_embeddings)
+        num_profiles = model_wrapper.profile_embeddings.shape[0]
+        
+        # Create label_names in the same order as profile_embeddings: test + val (+ train if included)
+        test_names = [extract_name_from_ex(ex) for ex in dm.test_dataset]
+        val_names = [extract_name_from_ex(ex) for ex in dm.val_dataset]
+        
+        # Check if train profiles are included (test+val+train = num_profiles)
+        if num_profiles == len(test_names) + len(val_names) + len(dm.train_dataset):
+            # Includes train profiles
+            train_names = [extract_name_from_ex(ex) for ex in dm.train_dataset]
+            self.label_names = np.array(test_names + val_names + train_names)
+        elif num_profiles == len(test_names) + len(val_names):
+            # Only test + val
+            self.label_names = np.array(test_names + val_names)
         else:
-            # Extract name from profile_keys/profile_values as fallback
-            def extract_name(ex):
-                k_list = ex['profile_keys'].split("||")
-                v_list = ex['profile_values'].split("||")
-                if 'name' in k_list:
-                    name = v_list[k_list.index('name')].strip()
-                elif 'article_title' in k_list:
-                    name = v_list[k_list.index('article_title')].strip()
-                else:
-                    name = v_list[0].strip() if v_list else ""
-                return ' '.join((word.capitalize() for word in name.split()))
-            self.label_names = np.array([extract_name(ex) for ex in dm.test_dataset])
+            # Fallback: just use test names (shouldn't happen, but safe fallback)
+            print(f"Warning: num_profiles ({num_profiles}) doesn't match expected sizes. Using test names only.")
+            self.label_names = np.array(test_names)
+        
+        # Verify the length matches
+        assert len(self.label_names) == num_profiles, (
+            f"label_names length ({len(self.label_names)}) doesn't match "
+            f"profile_embeddings shape ({num_profiles})"
+        )
+        
         self.adv_dataset = adv_dataset
     
     def __len__(self) -> int:
