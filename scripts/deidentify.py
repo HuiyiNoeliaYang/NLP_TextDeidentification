@@ -48,7 +48,7 @@ def main(
         eps: Optional[float] = None,
         min_percent_words: Optional[float] = None,
         adv_dataset: Optional = None,
-        out_folder_path: str = 'adv_csvs_full_8',
+        out_folder_path: str = 'adv_csvs_full_Test',
         out_file_path: str = None,
         ignore_stopwords: bool = False,
         fuzzy_ratio: float = 0.95,
