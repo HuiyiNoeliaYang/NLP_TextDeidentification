@@ -150,10 +150,15 @@ class WikipediaDataModule(LightningDataModule):
         version_str = ''  # change this any time any of the data-loading changes (to regenerate fingerprints)
 
         print(f"loading {self.dataset_source if self.dataset_source == 'parquet' else self.dataset_name}[{'' if self.dataset_source == 'parquet' else self.dataset_version}] split {self.dataset_train_split}")
-        train_percent = float(self.dataset_train_split.split(":")[-1].split("%")[0]) # example form of dataset_train_split = "train[:100%]"
-        val_percent = float(self.dataset_val_split.split(":")[-1].split("%")[0])
-        test_percent = 100 - train_percent - val_percent
-        self.dataset = datasets.Dataset.from_parquet(self.local_data_path, keep_in_memory=True).train_test_split(train_size=float(train_percent / 100)) if self.dataset_source == "parquet" else None
+        if self.dataset_source == "parquet":
+            # Parse percentages only for parquet datasets (needed to manually split the data)
+            train_percent = float(self.dataset_train_split.split(":")[-1].split("%")[0]) # example form of dataset_train_split = "train[:100%]"
+            val_percent = float(self.dataset_val_split.split(":")[-1].split("%")[0])
+            test_percent = 100 - train_percent - val_percent
+            self.dataset = datasets.Dataset.from_parquet(self.local_data_path, keep_in_memory=True).train_test_split(train_size=float(train_percent / 100))
+        else:
+            # For WikiBio: HuggingFace handles the percentage automatically via the split string (e.g., "train[:1%]")
+            self.dataset = None
         if self.dataset_source == "parquet":
             self.train_dataset = self.dataset['train']
         else:
@@ -191,6 +196,7 @@ class WikipediaDataModule(LightningDataModule):
         # wiki_bio test size: 72,831
         #print(f"loading {self.dataset_name} split {self.dataset_test_split}")
         if self.dataset_source == "parquet":
+            # test_percent was calculated above for parquet
             self.test_dataset = self.val_test_dataset['test']
         else:
             try:

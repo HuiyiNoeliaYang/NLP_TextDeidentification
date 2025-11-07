@@ -336,8 +336,17 @@ class MaskingTokenizingDataset(Dataset):
                 out_ex = dict_union(out_ex, self._get_nearest_neighbors(idx=idx, ex=ex))
         k_list = ex['profile_keys'].split("||")
         v_list = ex['profile_values'].split("||")
-        person_id = v_list[k_list.index('person_id')]
         # person_id is needed to get true and false positives person_ids at the point when metrics are pushed to wandb, to visualize the results. For a new dataset, replace this with whatever relevant id is.
+        # For WikiBio dataset, use 'name' or 'article_title' if 'person_id' doesn't exist
+        if 'person_id' in k_list:
+            person_id = v_list[k_list.index('person_id')]
+        elif 'name' in k_list:
+            person_id = v_list[k_list.index('name')]
+        elif 'article_title' in k_list:
+            person_id = v_list[k_list.index('article_title')]
+        else:
+            # Fallback to text_key_id if no identifier found
+            person_id = str(ex.get('text_key_id', 'unknown'))
         return out_ex | {"person_id" : person_id} 
 
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
