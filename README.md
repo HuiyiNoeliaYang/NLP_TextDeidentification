@@ -103,11 +103,11 @@ python main.py --epochs 60 --batch_size 128 --max_seq_length 128 --word_dropout_
 To generate masked documents using a pre-trained model:
 
 ```bash
-# Fast testing with 1% of training data (recommended for quick testing)
-python scripts/deidentify.py --model_key model_8_ls0.01 --n 1 --k 1 --train_split "train[:1%]"
+# Fast testing with 1% of all datasets (recommended for quick testing)
+python scripts/deidentify.py --model_key model_8_ls0.01 --n 1 --k 1 --train_split "train[:1%]" --val_split "val[:1%]" --test_split "test[:1%]"
 
-# Production run with full training data
-python scripts/deidentify.py --model_key model_8_ls0.01 --n 10 --k 1 --train_split "train[:100%]"
+# Production run with full datasets
+python scripts/deidentify.py --model_key model_8_ls0.01 --n 10 --k 1 --train_split "train[:100%]" --val_split "val[:100%]" --test_split "test[:100%]"
 ```
 
 **Key parameters:**
@@ -115,7 +115,9 @@ python scripts/deidentify.py --model_key model_8_ls0.01 --n 10 --k 1 --train_spl
 - `--n`: Number of documents to deidentify
 - `--k`: Top-K classes for adversarial goal function
 - `--train_split`: Training dataset split to use (e.g., `train[:1%]` for fast testing, `train[:100%]` for production)
-  - **Tip:** Use smaller splits (`train[:1%]` or `train[:10%]`) for faster testing. The full dataset takes ~1.5-2 hours to tokenize.
+- `--val_split`: Validation dataset split to use (e.g., `val[:1%]` for fast testing, `val[:100%]` for production)
+- `--test_split`: Test dataset split to use (e.g., `test[:1%]` for fast testing, `test[:100%]` for production)
+  - **Tip:** Use smaller splits (`[:1%]` or `[:10%]`) for faster testing. The full datasets take ~1.5-2 hours to tokenize.
 
 **Output:** Masked documents are saved in `adv_csvs_full_8/{model_key}/` directory.
 

@@ -58,6 +58,8 @@ def main(
         do_reid: bool = False,
         no_model: bool = False,
         train_split: str = 'train[:100%]',
+        val_split: str = 'val[:100%]',
+        test_split: str = 'test[:100%]',
     ):
     """Deidentifies data with these experimental parameters.
 
@@ -123,14 +125,14 @@ def main(
         profile_model_name_or_path = model.profile_model_name_or_path
     
     print(f"loading data with {num_cpus} CPUs")
-    print(f"Using training split: {train_split} (use --train_split to change)")
+    print(f"Using splits - train: {train_split}, val: {val_split}, test: {test_split} (use --train_split/--val_split/--test_split to change)")
     dm = WikipediaDataModule(
         document_model_name_or_path=model.document_model_name_or_path,
         profile_model_name_or_path=profile_model_name_or_path,
         dataset_name='wiki_bio',
         dataset_train_split=train_split,
-        dataset_val_split='val[:100%]',
-        dataset_test_split='test[:100%]',
+        dataset_val_split=val_split,
+        dataset_test_split=test_split,
         dataset_version='1.2.0',
         num_workers=num_cpus,
         train_batch_size=256,
@@ -299,6 +301,12 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--train_split', type=str, default='train[:100%]',
         help=('Training dataset split to use (e.g., train[:1%%] for 1%%, train[:10%%] for 10%%, train[:100%%] for full). Use smaller splits for faster testing.')
     )
+    parser.add_argument('--val_split', type=str, default='val[:100%]',
+        help=('Validation dataset split to use (e.g., val[:1%%] for 1%%, val[:10%%] for 10%%, val[:100%%] for full). Use smaller splits for faster testing.')
+    )
+    parser.add_argument('--test_split', type=str, default='test[:100%]',
+        help=('Test dataset split to use (e.g., test[:1%%] for 1%%, test[:10%%] for 10%%, test[:100%%] for full). Use smaller splits for faster testing.')
+    )
 
     args = parser.parse_args()
 
@@ -328,5 +336,7 @@ if __name__ == '__main__':
         max_idf_goal=args.max_idf_goal,
         do_reid=args.do_reid,
         train_split=args.train_split,
+        val_split=args.val_split,
+        test_split=args.test_split,
     )
     print(args)
