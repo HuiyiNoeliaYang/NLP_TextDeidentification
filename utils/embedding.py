@@ -46,10 +46,13 @@ def precompute_profile_embeddings(
         # For some reason have to annotate WikipediaDataModule as `Any` type
         # to avoid a circular import error.
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    model.profile_model.cuda()
-    model.profile_embed.cuda()
+    # Use CPU if CUDA is not available (for Mac/CPU compatibility)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model.profile_model.to(device)
+    model.profile_embed.to(device)
     model.profile_model.eval()
     model.profile_embed.eval()
+    print(f"Using device: {device} for embedding computation")
 
     train_profile_embeddings = np.zeros((len(dm.train_dataset), model.shared_embedding_dim))
     for val_batch in tqdm(dm.train_dataloader(), desc="Precomputing train profile embeddings", colour="blue", leave=False):
