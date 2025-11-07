@@ -82,7 +82,14 @@ def precompute_profile_embeddings_for_model_key(model_key: str):
     from model import CoordinateAscentModel
 
     checkpoint_path = model_paths_dict[model_key]
-    model = CoordinateAscentModel.load_from_checkpoint(checkpoint_path)
+    try:
+        model = CoordinateAscentModel.load_from_checkpoint(checkpoint_path, strict=True)
+    except RuntimeError as e:
+        if "Unexpected key" in str(e) or "Missing key" in str(e):
+            print(f"Warning: Loading checkpoint with strict=False due to key mismatch: {e}")
+            model = CoordinateAscentModel.load_from_checkpoint(checkpoint_path, strict=False)
+        else:
+            raise
     dm = WikipediaDataModule(
         document_model_name_or_path=model.document_model_name_or_path,
         profile_model_name_or_path=model.profile_model_name_or_path,
