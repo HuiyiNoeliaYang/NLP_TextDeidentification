@@ -7,9 +7,7 @@ from utils import get_profile_embeddings_by_model_key
 
 import argparse
 import collections
-import glob
 import os
-import re
 
 import pandas as pd
 import torch
@@ -44,66 +42,28 @@ def get_output_folder_by_model_key(model_key: str) -> str:
     return os.path.join(adv_csvs_folder, model_key)
 
 def load_adv_csv(dm: WikipediaDataModule) -> pd.DataFrame:
-    # Load all the stuff
-    adv_df = None
-    for model_name in ['model_3_1', 'model_3_2', 'model_3_3', 'model_3_4']:
-        adv_csvs_folder = os.path.normpath(
-            os.path.join(
-                os.path.abspath(__file__), os.pardir, os.pardir, 'adv_csvs_full_2'
-            )
-        )
-        print('adv_csvs_folder', adv_csvs_folder)
-        csv_filenames = glob.glob(
-            os.path.join(
-                adv_csvs_folder,
-                f'{model_name}*/results__b_1__k_*__n_1000.csv'
-            )
-        )
-        print(model_name, csv_filenames)
-        for filename in csv_filenames:
-            df = pd.read_csv(filename)
-            df['model_name'] = re.search(r'adv_csvs_full_2/(model_\d.*)/.+.csv', filename).group(1)
-            df['k'] = re.search(r'adv_csvs_full_2/.+/.+__k_(\d+)__.+.csv', filename).group(1)
-            df['i'] = df.index
-
-            df = df[df['result_type'] == 'Successful']
-
-            mini_df = df[['perturbed_text', 'model_name', 'i', 'k']]
-            
-            if adv_df is None:
-                adv_df = mini_df
-            else:
-                adv_df = pd.concat((adv_df, mini_df), axis=0)
-    
-    # Load baseline redacted data
-    mini_val_dataset = dm.test_dataset[:1000]
-    ner_df = pd.DataFrame(
-        columns=['perturbed_text'],
-        data=mini_val_dataset['document_redact_ner_bert']
+    """Load masked documents from the custom CSV for evaluation."""
+    custom_csv_path = os.path.join(
+        os.path.abspath(__file__), os.pardir, os.pardir,
+        'all_adv_csvs', 'adv_csvs_custom', 'mask_reconstruction_output.csv'
     )
-    ner_df['model_name'] = 'named_entity'
-    ner_df['i'] = ner_df.index
-        
-    lex_df = pd.DataFrame(
-        columns=['perturbed_text'],
-        data=mini_val_dataset['document_redact_lexical']
-    )
-    lex_df['model_name'] = 'lexical'
-    lex_df['i'] = lex_df.index
+    print(f'loading adversarial data from {custom_csv_path}')
+    adv_df = pd.read_csv(custom_csv_path)
 
-    # Combine both adversarial and baseline redacted data
-    baseline_df = pd.concat((lex_df, ner_df), axis=0)
-    baseline_df['k'] = 0
-    full_df = pd.concat((adv_df, baseline_df), axis=0)
+    if 'idx' in adv_df.columns and 'i' not in adv_df.columns:
+        adv_df['i'] = adv_df['idx']
+    if 'ground_truth_output' not in adv_df.columns:
+        raise ValueError("Custom CSV must include a `ground_truth_output` column.")
 
-    # Put newlines back
-    full_df['perturbed_text'] = full_df['perturbed_text'].apply(lambda s: s.replace('<SPLIT>', '\n'))
+    adv_df['model_name'] = 'custom_mask_reconstruction'
+    adv_df['k'] = -1  # placeholder since k isn't defined for external data
 
-    # Standardize mask tokens
-    full_df['perturbed_text'] = full_df['perturbed_text'].apply(lambda s: s.replace('[MASK]', dm.mask_token))
-    full_df['perturbed_text'] = full_df['perturbed_text'].apply(lambda s: s.replace('<mask>', dm.mask_token))
+    # Put newlines back and standardize mask tokens
+    adv_df['perturbed_text'] = adv_df['perturbed_text'].apply(lambda s: s.replace('<SPLIT>', '\n'))
+    adv_df['perturbed_text'] = adv_df['perturbed_text'].apply(lambda s: s.replace('[MASK]', dm.mask_token))
+    adv_df['perturbed_text'] = adv_df['perturbed_text'].apply(lambda s: s.replace('<mask>', dm.mask_token))
 
-    return full_df
+    return adv_df
 
 
 def main(document_type: str, model_key: str):
