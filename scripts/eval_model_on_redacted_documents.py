@@ -70,9 +70,16 @@ def main(document_type: str, model_key: str):
     checkpoint_path = model_paths_dict[model_key]
     assert isinstance(checkpoint_path, str), f"invalid checkpoint_path {checkpoint_path} for {model_key}"
     print(f"running attack on {model_key} loaded from {checkpoint_path}")
-    model = CoordinateAscentModel.load_from_checkpoint(
-        checkpoint_path
-    )
+    try:
+        model = CoordinateAscentModel.load_from_checkpoint(
+            checkpoint_path
+        )
+    except RuntimeError as err:
+        print("Warning: Loading checkpoint with strict=False due to key mismatch:", err)
+        model = CoordinateAscentModel.load_from_checkpoint(
+            checkpoint_path,
+            strict=False
+        )
 
     print(f"loading data with {num_cpus} CPUs")
     dm = WikipediaDataModule(
