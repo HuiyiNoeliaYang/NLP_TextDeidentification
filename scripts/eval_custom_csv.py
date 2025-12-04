@@ -46,6 +46,9 @@ def main(model_key: str, document_type: str, adv_csv_path: str, max_seq_length: 
         print("Warning: Loading checkpoint with strict=False due to key mismatch:", err)
         model = CoordinateAscentModel.load_from_checkpoint(checkpoint_path, strict=False)
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device)
+
     csv_path = os.path.abspath(adv_csv_path)
     print(f"Loading perturbed data from {csv_path}")
     adv_df = pd.read_csv(csv_path)
@@ -58,11 +61,11 @@ def main(model_key: str, document_type: str, adv_csv_path: str, max_seq_length: 
     true_idxs = torch.tensor(adv_df['ground_truth_output'].to_numpy(), dtype=torch.long)
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(model.document_model_name_or_path)
-    all_profile_embeddings = get_profile_embeddings(model_key=model_key).to(model.device)
+    all_profile_embeddings = get_profile_embeddings(model_key=model_key).to(device)
 
     model.document_model.eval()
     model.document_embed.eval()
-    model_device = next(model.parameters()).device
+    model_device = device
 
     total = 0
     total_correct_by_k = collections.defaultdict(lambda: 0)
