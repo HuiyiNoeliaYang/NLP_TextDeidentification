@@ -179,9 +179,12 @@ def get_args() -> argparse.Namespace:
         description='Evaluates model accuracy using all profile embeddings (train, test, and val).',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument('--document_type', type=str, default='document',
+    parser.add_argument(
+        '--document_type',
+        type=str,
+        default='document',
         help='document type for evaluation',
-        choices=["document", "document_redact_ner_bert", "document_redact_lexical"]
+        choices=["document", "document_redact_ner_bert", "document_redact_lexical", "perturbed_text"]
     )
     parser.add_argument('--model', '--model_key', type=str, default='model_5',
         help='model str name (see model_cfg for more info)',
