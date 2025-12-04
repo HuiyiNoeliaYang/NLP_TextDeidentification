@@ -139,6 +139,7 @@ def main(document_type: str, model_key: str):
     
     adv_csv['model_pred_idxs'] = torch.cat(pred_idxs)
     adv_csv['is_correct'] = (adv_csv['i'] == adv_csv['model_pred_idxs'])
+    total = len(adv_csv)
     print(adv_csv.groupby(['model_name', 'k'])['is_correct'].mean())
 
     # Count masks
