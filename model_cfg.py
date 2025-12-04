@@ -91,7 +91,7 @@ model_paths_dict["model_3_3__idf"] = "/home/jxm3/research/deidentification/unsup
 # model_3_4 is pmlm-a-tapas, uniformly sampled random masknig
 #   wandb.ai/jack-morris/deid-wikibio-4/runs/1g8o1iw3
 model_paths_dict["model_3_4"] = '/home/jxm3/research/deidentification/unsupervised-deidentification/saves/ca__pmlm-a__tapas__dropout_-1.0_1.0_0.0__e3072__ls0.1/deid-wikibio-4_default/1g8o1iw3_749/checkpoints/last.ckpt'
-model_paths_dict["model_3_4__idf"] = '/home/jxm3/research/deidentification/unsupervised-deidentification/saves/ca__pmlm-a__tapas__idf__dropout_-1.0_1.0_0.0__e3072__ls0.1/deid-wikibio-4_default/3fyovpn7_753/checkpoints/last.ckpt'
+model_paths_dict["model_3_4__idf"] = '/teamspace/studios/this_studio/NLP_TextDeidentification/wikibio_roberta_roberta_idf/model.ckpt'
 
 # model_3_5 is pmlm-a-tapas, uniformly sampled random masking,
 #   **trained on lexically redacted data**
