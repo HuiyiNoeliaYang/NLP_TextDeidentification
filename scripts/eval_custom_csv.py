@@ -71,6 +71,8 @@ def main(model_key: str, document_type: str, adv_csv_path: str, max_seq_length: 
     total_correct_by_k = collections.defaultdict(lambda: 0)
     k_values = [1, 10, 100, 1000]
 
+    pred_rows = []
+
     for start in tqdm(range(0, len(texts), batch_size), desc='Evaluating custom CSV', colour='yellow'):
         end = start + batch_size
         batch_texts = texts[start:end]
@@ -82,6 +84,18 @@ def main(model_key: str, document_type: str, adv_csv_path: str, max_seq_length: 
             document_to_profile_logits = document_embeddings @ all_profile_embeddings.T
 
         total += len(document_to_profile_logits)
+
+        logits_cpu = document_to_profile_logits.cpu()
+        preds = logits_cpu.argmax(dim=1)
+
+        for rel_idx, pred_idx in enumerate(preds):
+            abs_idx = start + rel_idx
+            pred_rows.append({
+                "row_idx": abs_idx,
+                "ground_truth_output": int(true_idxs[abs_idx].item()),
+                "model_pred_idx": int(pred_idx.item()),
+                "is_correct": int(pred_idx.item() == true_idxs[abs_idx].item())
+            })
 
         for k in k_values:
             topk_correct = (
@@ -98,6 +112,21 @@ def main(model_key: str, document_type: str, adv_csv_path: str, max_seq_length: 
     for k in k_values:
         acc = total_correct_by_k[k] / total
         print(f'Top-{k} accuracy = {acc * 100.0:.2f}')
+
+    output_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, 'eval', model_key)
+    os.makedirs(output_folder, exist_ok=True)
+    summary_path = os.path.join(output_folder, f'custom_{document_type}.txt')
+    with open(summary_path, 'w') as f:
+        f.write(f'**** Evaluated on {total} test examples of type {document_type} ****\n')
+        for k in k_values:
+            acc = total_correct_by_k[k] / total
+            f.write(f'Top-{k} accuracy = {acc * 100.0:.2f}\n')
+    print(f"Summary written to {summary_path}")
+
+    results_df = pd.DataFrame(pred_rows)
+    results_path = os.path.join(output_folder, f'custom_{document_type}_results.csv')
+    results_df.to_csv(results_path, index=False)
+    print(f"Per-example results written to {results_path}")
 
 
 def get_args() -> argparse.Namespace:
