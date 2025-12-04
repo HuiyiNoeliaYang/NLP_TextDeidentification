@@ -43,9 +43,12 @@ def get_output_folder_by_model_key(model_key: str) -> str:
 
 def load_adv_csv(dm: WikipediaDataModule) -> pd.DataFrame:
     """Load masked documents from the custom CSV for evaluation."""
-    custom_csv_path = os.path.join(
-        os.path.abspath(__file__), os.pardir, os.pardir,
-        'all_adv_csvs', 'adv_csvs_custom', 'mask_reconstruction_output.csv'
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    custom_csv_path = os.path.normpath(
+        os.path.join(
+            script_dir, os.pardir,
+            'all_adv_csvs', 'adv_csvs_custom', 'mask_reconstruction_output.csv'
+        )
     )
     print(f'loading adversarial data from {custom_csv_path}')
     adv_df = pd.read_csv(custom_csv_path)
